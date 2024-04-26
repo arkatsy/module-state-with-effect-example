@@ -16,6 +16,17 @@ body {
 
 #wrapper {
   display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+#controls {
+  display: flex;
+  gap: 2rem;
+}
+
+#counters {
+  display: flex;
   gap: 2rem;
 }
 

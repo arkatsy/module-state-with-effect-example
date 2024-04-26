@@ -22,42 +22,51 @@ function create(initState) {
   return { getState, setState, subscribe };
 }
 
-const countStore = create({ count: 0 });
+const identity = (state) => state;
 
-const useStore = (store) => {
-  const [state, set] = React.useState(store.getState());
+const useStore = (store, selector = identity) => {
+  const [state, set] = React.useState(selector(store.getState()));
 
   React.useEffect(() => {
-    const cb = () => set(store.getState());
+    const cb = () => set(selector(store.getState()));
     const unsub = store.subscribe(cb);
     cb();
     return () => unsub();
-  }, [store]);
+  }, [store, selector]);
 
   return [state, store.setState];
 };
 
+const countStore = create({ count: 0, step: 1 });
+
 export default function App() {
   return (
     <div id="wrapper">
-      <Counter1 />
-      <hr />
-      <Counter2 />
+      <div id="counters">
+        <Counter1 />
+        <hr />
+        <Counter2 />
+      </div>
+      <Controls />
     </div>
   );
 }
 
 function Counter1() {
-  const [state, setState] = useStore(countStore);
+  const [state, setState] = useStore(
+    countStore,
+    React.useCallback((state) => state.count, [])
+  );
+  console.log("[render] Counter1");
 
-  const inc = () => countStore.setState((state) => ({ count: state.count + 1 }));
-  const dec = () => countStore.setState((state) => ({ count: state.count - 1 }));
+  const inc = () => countStore.setState((state) => ({ ...state, count: state.count + state.step }));
+  const dec = () => countStore.setState((state) => ({ ...state, count: state.count - state.step }));
 
   return (
     <div>
-      <h4>Counter1</h4>
+      <h4>Synced Counter1</h4>
       <hr />
-      <div>Count: {state.count}</div>
+      <div>Count: {state}</div>
       <div id="actions">
         <button onClick={inc}>Increment</button>
         <button onClick={dec}>Decrement</button>
@@ -67,19 +76,46 @@ function Counter1() {
 }
 
 function Counter2() {
-  const [state, setState] = useStore(countStore);
+  const [state, setState] = useStore(
+    countStore,
+    React.useCallback((state) => state.count, [])
+  );
+  console.log("[render] Counter2");
 
-  const inc = () => countStore.setState((state) => ({ count: state.count + 1 }));
-  const dec = () => countStore.setState((state) => ({ count: state.count - 1 }));
+  const inc = () => countStore.setState((state) => ({ ...state, count: state.count + state.step }));
+  const dec = () => countStore.setState((state) => ({ ...state, count: state.count - state.step }));
 
   return (
     <div>
-      <h4>Counter2</h4>
+      <h4>Synced Counter2</h4>
       <hr />
-      <div>Count: {state.count}</div>
+      <div>Count: {state}</div>
       <div id="actions">
         <button onClick={inc}>Increment</button>
         <button onClick={dec}>Decrement</button>
+      </div>
+    </div>
+  );
+}
+
+function Controls() {
+  const [state, setState] = useStore(
+    countStore,
+    React.useCallback((state) => state.step, [])
+  );
+  console.log("[render] Controls");
+
+  const incStep = () => countStore.setState((state) => ({ ...state, step: state.step + 1 }));
+  const decStep = () => countStore.setState((state) => ({ ...state, step: state.step - 1 }));
+
+  return (
+    <div>
+      <h4>Controls</h4>
+      <hr />
+      <div>Step: {state}</div>
+      <div id="controls">
+        <button onClick={incStep}>Increment Step</button>
+        <button onClick={decStep}>Decrement Step</button>
       </div>
     </div>
   );
