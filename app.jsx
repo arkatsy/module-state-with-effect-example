@@ -10,7 +10,7 @@ function create(initState) {
   }
 
   function setState(newState) {
-    state = newState;
+    state = typeof newState === "function" ? newState(state) : newState;
     listeners.forEach((listener) => listener());
   }
 
@@ -24,57 +24,63 @@ function create(initState) {
 
 const countStore = create({ count: 0 });
 
+const useStore = (store) => {
+  const [state, set] = React.useState(store.getState());
+
+  React.useEffect(() => {
+    const cb = () => set(store.getState());
+    const unsub = store.subscribe(cb);
+    cb();
+    return () => unsub();
+  }, [store]);
+
+  return [state, store.setState];
+};
+
 export default function App() {
   return (
     <div id="wrapper">
       <Counter1 />
+      <hr />
       <Counter2 />
     </div>
   );
 }
 
 function Counter1() {
-  const [state, setState] = React.useState(countStore.getState());
+  const [state, setState] = useStore(countStore);
 
-  React.useEffect(() => {
-    return countStore.subscribe(() => {
-      setState(countStore.getState());
-    });
-  });
-
-  const inc = () => {
-    countStore.setState({ count: state.count + 1 });
-  };
+  const inc = () => countStore.setState((state) => ({ count: state.count + 1 }));
+  const dec = () => countStore.setState((state) => ({ count: state.count - 1 }));
 
   return (
     <div>
       <h4>Counter1</h4>
       <hr />
       <div>Count: {state.count}</div>
-      <button onClick={inc}>Increment</button>
+      <div id="actions">
+        <button onClick={inc}>Increment</button>
+        <button onClick={dec}>Decrement</button>
+      </div>
     </div>
   );
 }
 
 function Counter2() {
-  const [state, setState] = React.useState(countStore.getState());
+  const [state, setState] = useStore(countStore);
 
-  React.useEffect(() => {
-    return countStore.subscribe(() => {
-      setState(countStore.getState());
-    });
-  });
-
-  const inc = () => {
-    countStore.setState({ count: state.count + 1 });
-  };
+  const inc = () => countStore.setState((state) => ({ count: state.count + 1 }));
+  const dec = () => countStore.setState((state) => ({ count: state.count - 1 }));
 
   return (
     <div>
       <h4>Counter2</h4>
       <hr />
       <div>Count: {state.count}</div>
-      <button onClick={inc}>Increment</button>
+      <div id="actions">
+        <button onClick={inc}>Increment</button>
+        <button onClick={dec}>Decrement</button>
+      </div>
     </div>
   );
 }
